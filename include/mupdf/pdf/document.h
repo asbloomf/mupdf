@@ -163,6 +163,23 @@ struct pdf_unsaved_sig_s
 	pdf_unsaved_sig *next;
 };
 
+/* Page labels */
+typedef struct pdf_label_item_s pdf_label_item;
+
+struct pdf_label_item_s {
+	int pagenum;
+	char *style;
+	char *prefix;
+	int value;
+};
+
+typedef struct pdf_label_items_s pdf_label_items;
+
+struct pdf_label_items_s {
+	int count;
+	pdf_label_item** items;
+};
+
 struct pdf_document_s
 {
 	fz_document super;
@@ -255,6 +272,8 @@ struct pdf_document_s
 	int num_type3_fonts;
 	int max_type3_fonts;
 	fz_font **type3_fonts;
+	
+	pdf_label_items label_items;
 };
 
 /*

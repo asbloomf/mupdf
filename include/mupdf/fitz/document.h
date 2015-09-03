@@ -56,6 +56,8 @@ typedef int (fz_page_separation_disabled_fn)(fz_context *ctx, fz_page *page, int
 typedef int (fz_page_count_separations_fn)(fz_context *ctx, fz_page *page);
 typedef const char *(fz_page_get_separation_fn)(fz_context *ctx, fz_page *page, int separation, uint32_t *rgb, uint32_t *cmyk);
 
+typedef char *(fz_document_page_label_fn)(fz_page *page);
+
 struct fz_page_s
 {
 	int refs;
@@ -87,6 +89,7 @@ struct fz_document_s
 	fz_document_load_page_fn *load_page;
 	fz_document_lookup_metadata_fn *lookup_metadata;
 	fz_document_write_fn *write;
+	fz_document_page_label_fn *page_label;
 	int did_layout;
 };
 
