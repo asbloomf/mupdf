@@ -1409,6 +1409,44 @@ pdf_drop_ocg(fz_context *ctx, pdf_ocg_descriptor *desc)
 	fz_free(ctx, desc);
 }
 
+static void
+pdf_read_page_labels(fz_context *ctx, pdf_document *doc)
+{
+	int i, j;
+	pdf_obj *root = pdf_dict_gets(ctx, pdf_trailer(ctx, doc), "Root");
+	pdf_obj *labels = pdf_dict_gets(ctx, root, "PageLabels");
+
+	doc->label_items.count = 0;
+	
+	if (pdf_is_dict(ctx, labels))
+	{
+		pdf_obj *nums = pdf_dict_gets(ctx, labels, "Nums");
+
+		if (pdf_is_array(ctx, nums))
+		{
+			int len = pdf_array_len(ctx, nums);
+
+			doc->label_items.count = (len + 1) / 2;
+			doc->label_items.items = fz_malloc_array(ctx, (len + 1) / 2, sizeof(pdf_label_item*));
+
+			for (i = 0, j = 0; i + 1 < len; i += 2, j++)
+			{
+				pdf_obj *key = pdf_array_get(ctx, nums, i);
+				pdf_obj *val = pdf_array_get(ctx, nums, i + 1);
+
+				if (pdf_is_dict(ctx, val))
+				{
+					doc->label_items.items[j] = fz_malloc(ctx, sizeof(pdf_label_item));
+					doc->label_items.items[j]->pagenum = pdf_to_int(ctx, key);
+					doc->label_items.items[j]->style = pdf_to_name(ctx, pdf_dict_gets(ctx, val, "S"));
+					doc->label_items.items[j]->prefix = pdf_to_str_buf(ctx, pdf_dict_gets(ctx, val, "P"));
+					doc->label_items.items[j]->value = pdf_to_int(ctx, pdf_dict_gets(ctx, val, "St"));
+				}
+			}
+		}
+	}
+}
+
 /*
  * Initialize and load xref tables.
  * If password is not null, try to decrypt.
@@ -1563,6 +1601,18 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 		}
 	}
 	fz_catch(ctx) { }
+	
+	fz_try(ctx)
+	{
+		if (doc->version >= 13)
+			pdf_read_page_labels(ctx, doc);
+	}
+	fz_catch(ctx)
+	{
+		fz_warn(ctx, "Ignoring Broken Page Labels");
+	}
+
+
 }
 
 static void
@@ -1577,6 +1627,12 @@ pdf_close_document(fz_context *ctx, pdf_document *doc)
 	 * that we are about to destroy. Simplest solution is to bin the
 	 * glyph cache at this point. */
 	fz_purge_glyph_cache(ctx);
+	
+	for (i = 0; i < doc->label_items.count; i++)
+	{
+	  fz_free(ctx, doc->label_items.items[i]);
+	}
+	fz_free(ctx, doc->label_items.items);
 
 	if (doc->js)
 		pdf_drop_js(ctx, doc->js);
@@ -2316,6 +2372,12 @@ pdf_page_presentation(fz_context *ctx, pdf_page *page, float *duration)
 	return &page->transition;
 }
 
+char *
+pdf_page_label(pdf_page *page)
+{
+	return page->label;
+}
+
 /*
 	Initializers for the fz_document interface.
 
@@ -2340,6 +2402,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	doc->super.load_page = (fz_document_load_page_fn *)pdf_load_page;
 	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn *)pdf_lookup_metadata;
 	doc->update_appearance = pdf_update_appearance;
+	doc->super.page_label = (fz_document_page_label_fn *)pdf_page_label;
 
 	pdf_lexbuf_init(ctx, &doc->lexbuf.base, PDF_LEXBUF_LARGE);
 	doc->file = fz_keep_stream(ctx, file);
