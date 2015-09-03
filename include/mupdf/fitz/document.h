@@ -49,6 +49,10 @@ typedef int (fz_page_separation_disabled_fn)(fz_context *ctx, fz_page *page, int
 typedef int (fz_page_count_separations_fn)(fz_context *ctx, fz_page *page);
 typedef const char *(fz_page_get_separation_fn)(fz_context *ctx, fz_page *page, int separation, uint32_t *rgb, uint32_t *cmyk);
 
+typedef char *(fz_page_label_fn)(fz_context *ctx, fz_page *page);
+typedef char *(fz_document_lookup_page_label_fn)(fz_context *ctx, fz_document *doc, int pagenum);
+typedef int (fz_document_reverse_lookup_page_label_fn)(fz_context *ctx, fz_document *doc, char* pagelabel);
+
 typedef void (fz_annot_drop_imp_fn)(fz_context *ctx, fz_annot *annot);
 typedef fz_annot *(fz_annot_next_fn)(fz_context *ctx, fz_annot *annot);
 typedef fz_rect *(fz_annot_bound_fn)(fz_context *ctx, fz_annot *annot, fz_rect *rect);
@@ -76,6 +80,7 @@ struct fz_page_s
 	fz_page_separation_disabled_fn *separation_disabled;
 	fz_page_count_separations_fn *count_separations;
 	fz_page_get_separation_fn *get_separation;
+	fz_page_label_fn *page_label;
 };
 
 struct fz_document_s
@@ -90,6 +95,8 @@ struct fz_document_s
 	fz_document_count_pages_fn *count_pages;
 	fz_document_load_page_fn *load_page;
 	fz_document_lookup_metadata_fn *lookup_metadata;
+	fz_document_lookup_page_label_fn *lookup_page_label;
+	fz_document_reverse_lookup_page_label_fn *reverse_lookup_page_label;
 	int did_layout;
 };
 
@@ -403,6 +410,10 @@ int fz_separation_disabled_on_page (fz_context *ctx, fz_page *, int sep);
 	gproof files.
 */
 const char *fz_get_separation_on_page(fz_context *ctx, fz_page *page, int sep, uint32_t *rgba, uint32_t *cmyk);
+
+char *fz_page_label(fz_context *ctx, fz_page *page);
+
+char *fz_lookup_page_label(fz_context *ctx, fz_document *doc, int pagenum);
 
 /*
 	fz_save_gproof: Given a currently open document, create a

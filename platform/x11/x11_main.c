@@ -479,8 +479,12 @@ static void winblitstatusbar(pdfapp_t *app)
 	}
 	else if (showingpage)
 	{
-		char buf[42];
-		snprintf(buf, sizeof buf, "Page %d/%d", gapp.pageno, gapp.pagecount);
+		char buf[256];
+		if (gapp.doc->page_label && gapp.doc->page_label(gapp.page))
+			snprintf(buf, sizeof buf, "%s (Page %d/%d)", gapp.doc->page_label(gapp.page), gapp.pageno, gapp.pagecount);
+		else
+			snprintf(buf, sizeof buf, "Page %d/%d", gapp.pageno, gapp.pagecount);
+			
 		windrawstringxor(&gapp, 10, 20, buf);
 	}
 }

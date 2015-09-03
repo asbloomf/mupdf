@@ -3,6 +3,7 @@
 
 int pdf_lookup_page_number(fz_context *ctx, pdf_document *doc, pdf_obj *pageobj);
 int pdf_count_pages(fz_context *ctx, pdf_document *doc);
+char *pdf_page_label(fz_context *ctx, pdf_page *page);
 pdf_obj *pdf_lookup_page_obj(fz_context *ctx, pdf_document *doc, int needle);
 
 /*
@@ -152,6 +153,7 @@ struct pdf_page_s
 	int transition_present;
 	fz_transition transition;
 	int incomplete;
+	char *label;
 };
 
 enum

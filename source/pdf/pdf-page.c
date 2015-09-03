@@ -427,7 +427,8 @@ pdf_drop_page_imp(fz_context *ctx, pdf_page *page)
 	if (page->deleted_annots)
 		pdf_drop_annots(ctx, page->deleted_annots);
 	if (page->tmp_annots)
-		pdf_drop_annots(ctx, page->tmp_annots);
+	if (page->label)
+		fz_free(ctx, page->label);
 	/* doc->focus, when not NULL, refers to one of
 	 * the annotations and must be NULLed when the
 	 * annotations are destroyed. doc->focus_obj
@@ -456,6 +457,7 @@ pdf_new_page(fz_context *ctx, pdf_document *doc)
 	page->super.first_annot = (fz_page_first_annot_fn *)pdf_first_annot;
 	page->super.run_page_contents = (fz_page_run_page_contents_fn *)pdf_run_page_contents;
 	page->super.page_presentation = (fz_page_page_presentation_fn *)pdf_page_presentation;
+	page->super.page_label = (fz_page_label_fn *)pdf_page_label;
 
 	page->resources = NULL;
 	page->contents = NULL;
@@ -597,6 +599,18 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 		page->incomplete |= PDF_PAGE_INCOMPLETE_CONTENTS;
 	}
 
+	/* set page label */
+	fz_try(ctx)
+	{
+		if (doc->label_items.count > 0)
+		{
+			page->label = fz_lookup_page_label(ctx, (fz_document *)doc, number);
+		}
+	}
+	fz_catch(ctx)
+	{
+		fz_warn(ctx, "Could not set page label");
+	}
 	return page;
 }
 

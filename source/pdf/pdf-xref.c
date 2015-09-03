@@ -1409,6 +1409,70 @@ pdf_drop_ocg(fz_context *ctx, pdf_ocg_descriptor *desc)
 	fz_free(ctx, desc);
 }
 
+static void
+pdf_read_page_labels(fz_context *ctx, pdf_document *doc)
+{
+	int i, j;
+	pdf_obj *root = pdf_dict_gets(ctx, pdf_trailer(ctx, doc), "Root");
+	pdf_obj *labels = pdf_dict_gets(ctx, root, "PageLabels");
+
+	doc->label_items.count = 0;
+	
+	if (pdf_is_dict(ctx, labels))
+	{
+		pdf_obj *kids = pdf_dict_gets(ctx, labels, "Kids");
+		int kidslen = 0, kidsidx = 0;
+		int len = 0;
+		if (pdf_is_array(ctx, kids))
+		{
+			//indirect references
+			kidslen = pdf_array_len(ctx, kids);
+			i = 0;
+			do {
+				pdf_obj *nums = pdf_dict_gets(ctx, pdf_array_get(ctx, kids, i), "Nums");
+				if (pdf_is_array(ctx, nums))
+				{
+					len += pdf_array_len(ctx, nums);
+				}
+			} while (++i < kidslen);
+			doc->label_items.count = (len + 1) / 2;
+			doc->label_items.items = fz_malloc_array(ctx, (len + 1) / 2, sizeof(pdf_label_item*));
+		}
+		j = 0;
+		do {
+			if(kids != NULL) labels = pdf_array_get(ctx, kids, kidsidx);
+			pdf_obj *nums = pdf_dict_gets(ctx, labels, "Nums");
+
+			if (pdf_is_array(ctx, nums))
+			{
+				int locallen = pdf_array_len(ctx, nums);
+
+				if (len == 0) // len will already be set if it was indirect references
+				{
+					len = locallen;
+					doc->label_items.count = (len + 1) / 2;
+					doc->label_items.items = fz_malloc_array(ctx, (len + 1) / 2, sizeof(pdf_label_item*));
+				}
+
+				for (i = 0; i + 1 < locallen; i += 2, j++)
+				{
+					pdf_obj *key = pdf_array_get(ctx, nums, i);
+					pdf_obj *val = pdf_array_get(ctx, nums, i + 1);
+
+					if (pdf_is_dict(ctx, val))
+					{
+						doc->label_items.items[j] = fz_malloc(ctx, sizeof(pdf_label_item));
+						doc->label_items.items[j]->pagenum = pdf_to_int(ctx, key);
+						doc->label_items.items[j]->style = pdf_to_name(ctx, pdf_dict_gets(ctx, val, "S"));
+						doc->label_items.items[j]->prefix = pdf_to_str_buf(ctx, pdf_dict_gets(ctx, val, "P"));
+						doc->label_items.items[j]->value = pdf_to_int(ctx, pdf_dict_gets(ctx, val, "St"));
+					}
+				}
+			}
+		} while (++kidsidx < kidslen);
+	}
+}
+
 /*
  * Initialize and load xref tables.
  * If password is not null, try to decrypt.
@@ -1563,6 +1627,18 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 		}
 	}
 	fz_catch(ctx) { }
+	
+	fz_try(ctx)
+	{
+		if (doc->version >= 13)
+			pdf_read_page_labels(ctx, doc);
+	}
+	fz_catch(ctx)
+	{
+		fz_warn(ctx, "Ignoring Broken Page Labels");
+	}
+
+
 }
 
 static void
@@ -1577,6 +1653,12 @@ pdf_close_document(fz_context *ctx, pdf_document *doc)
 	 * that we are about to destroy. Simplest solution is to bin the
 	 * glyph cache at this point. */
 	fz_purge_glyph_cache(ctx);
+	
+	for (i = 0; i < doc->label_items.count; i++)
+	{
+	  fz_free(ctx, doc->label_items.items[i]);
+	}
+	fz_free(ctx, doc->label_items.items);
 
 	if (doc->js)
 		pdf_drop_js(ctx, doc->js);
@@ -2316,6 +2398,240 @@ pdf_page_presentation(fz_context *ctx, pdf_page *page, float *duration)
 	return &page->transition;
 }
 
+char *
+pdf_page_label(fz_context *ctx, pdf_page *page)
+{
+	return page->label;
+}
+
+void
+format_roman_numeral(int number, char* out_ptr) {
+	if (number < 1)
+		return;
+	static struct {
+		int value;
+		const char *numeral;
+	} romandata[] = {
+		{ 1000, "M" },{ 900, "CM" },{ 500, "D" },{ 400, "CD" },
+		{ 100, "C" },{ 90, "XC" },{ 50, "L" },{ 40, "XL" },
+		{ 10, "X" },{ 9, "IX" },{ 5, "V" },{ 4, "IV" },{ 1, "I" }
+	};
+
+	size_t len = 0;
+	int num = number, i = 0;
+	for (; num > 0; i++) {
+		for (; num >= romandata[i].value; num -= romandata[i].value) {
+			len += romandata[i].numeral[1] ? 2 : 1;
+		}
+	}
+	assert(len > 0);
+
+	char *c = out_ptr;
+	num = number; i = 0;
+	for (; num > 0; i++) {
+		for (; num >= romandata[i].value; num -= romandata[i].value) {
+			int size = strlen(romandata[i].numeral);
+			strncpy(c, romandata[i].numeral, size + 1);
+			c += size;
+		}
+	}
+}
+
+static inline int pdf_tolower(int c)
+{
+	if (c >= 'A' && c <= 'Z')
+		return c + 32;
+	return c;
+}
+
+const char *
+pdf_lookup_page_label(fz_context *ctx, pdf_document *doc, int pagenum)
+{
+	int i, num;
+	char *page_label;
+
+	if (doc->label_items.count > 0)
+	{
+		for (i = 0; i < doc->label_items.count; i++)
+		{
+			if (doc->label_items.items[i]->pagenum > pagenum)
+			{
+				break;
+			}
+		}
+		pdf_label_item *label = doc->label_items.items[--i];
+		num = label->pagenum == 0 ? pagenum + 1 : fz_max(label->value, 1) + (pagenum - label->pagenum);
+
+		if (!strcmp(label->style, "D")) // D is regular numerals
+		{
+			page_label = fz_malloc(ctx, strlen(label->prefix) + 32);
+			sprintf(page_label, "%s%d", label->prefix, num);
+		}
+		else if (!strcmp(label->style, "R") || !strcmp(label->style, "r")) // R is upper case roman, r is lower case
+		{
+			page_label = fz_malloc(ctx, strlen(label->prefix) + 32);
+			strcpy(page_label, label->prefix);
+			char* roman = page_label + strlen(page_label);
+			format_roman_numeral(num, roman);
+			if (label->style[0] == 'r')
+			{
+				int i = 0;
+				for (; roman[i]; ++i)
+				{
+					roman[i] = pdf_tolower(roman[i]);
+				}
+			}
+		}
+		else if (!strcmp(label->style, "A") || !strcmp(label->style, "a")) // A..Z, AA..ZZ, AAA..ZZZ, ...
+		{
+			page_label = fz_malloc(ctx, strlen(label->prefix) + (num / 26) + 2);
+			strcpy(page_label, label->prefix);
+			char* alpha = page_label + strlen(page_label);
+			memset(alpha, label->style[0] + (num - 1) % 26, ((num - 1) / 26) + 1); // label->style[0] is either 'a' or 'A'
+			alpha[((num - 1) / 26) + 1] = 0;
+		}
+		else
+		{
+			page_label = fz_malloc(ctx, strlen(label->prefix) + 1);
+			strcpy(page_label, label->prefix);
+		}
+		return page_label;
+	}
+
+	return 0;
+}
+
+int pdf_atoi_az(char * const s)
+{
+	// this is for strings repeating the same character. A means 1, Z means 26, AA means 26 + 1, ZZ means 26 + 26, AAA means (26 * 2) + 1, ZZZ means (26 * 2) + 26
+	if (s == NULL)
+		return 0;
+	char *ptr = s + 1;
+	char base = (s[0] >= 'a' && s[0] <= 'z') ? 'a' : 'A';
+	int count = 0;
+	while (*ptr == *s) {
+		++ptr;
+		++count;
+	}
+	return 1 + s[0] - base + (count * 26);
+}
+
+int pdf_rtoi(const char *s)
+{
+	// this is to convert roman numerals regardless of case
+	if (s == NULL)
+		return 0;
+	int num = 0;
+	int lastnum = 0;
+	const char *ptr = s;
+	while (*ptr != '\0') {
+		int currentnum = 0;
+		if (*ptr == 'M' || *ptr == 'm')
+			currentnum = 1000;
+		else if (*ptr == 'D' || *ptr == 'd')
+			currentnum = 500;
+		else if (*ptr == 'C' || *ptr == 'c')
+			currentnum = 100;
+		else if (*ptr == 'L' || *ptr == 'l')
+			currentnum = 50;
+		else if (*ptr == 'X' || *ptr == 'x')
+			currentnum = 10;
+		else if (*ptr == 'V' || *ptr == 'v')
+			currentnum = 5;
+		else if (*ptr == 'I' || *ptr == 'i')
+			currentnum = 1;
+		else break;
+
+		if (lastnum > 0 && currentnum > lastnum)
+		{
+			num = num - lastnum + (currentnum - lastnum);
+		}
+		else
+		{
+			num += currentnum;
+		}
+		lastnum = currentnum;
+
+		++ptr;
+	}
+	return num;
+}
+
+int
+pdf_reverse_lookup_page_label(fz_context *ctx, pdf_document *doc, char* pagelabel)
+{
+	// this function is to get the index of the page with labeled pagelabel
+	// so, check that the prefix matches as far as it goes and then if there are any numbers left, figure out if they match
+	int i, idx;
+	char *pagelabel_after_prefix = pagelabel;
+
+	if (doc->label_items.count > 0)
+	{
+		pdf_label_item *label = 0;
+		int labelnum = 0;
+		for (i = 0; i < doc->label_items.count; i++)
+		{
+			// iterate through all the page labels
+			pdf_label_item *tlabel = doc->label_items.items[i];
+			if (labelnum != 0 && (tlabel->pagenum - label->pagenum) >= labelnum)
+				break;
+
+			for (idx = 0; tlabel->prefix[idx] != '\0'; ++idx)
+			{
+				if (tlabel->prefix[idx] != pagelabel[idx])
+					break;
+			}
+			if (tlabel->prefix[idx] != '\0')
+				continue;
+			pagelabel_after_prefix = pagelabel + idx;
+			if (!strcmp(tlabel->style, "D"))
+			{
+				int num = fz_atoi(pagelabel_after_prefix);
+				if (num == 0)
+					continue;
+				/*int len = strlen(pagelabel_after_prefix);
+				char* num_str_buf = fz_malloc(ctx, len + 1);
+				itoa(num, num_str_buf, 10);
+				int len2 = strlen(num_str_buf);
+				fz_free(num_str_buf);
+				if (len2 < len)
+				continue;*/
+				if (tlabel->value > num)
+					break;
+				label = tlabel;
+				labelnum = num;
+				//TODO: we really just need to verify that the next page label is far enough away, that is, more than num pages...
+			}
+			else if (!strcmp(tlabel->style, "A") || !strcmp(tlabel->style, "a"))
+			{
+				// make sure the first letter is the correct case
+				if (pagelabel_after_prefix[0] < tlabel->style[0] || pagelabel_after_prefix[0] > (tlabel->style[0] + 25))
+					continue;
+				int num = pdf_atoi_az(pagelabel_after_prefix);
+				if (tlabel->value > num)
+					break;
+				label = tlabel;
+				labelnum = num;
+			}
+			else if (!strcmp(tlabel->style, "R") || !strcmp(tlabel->style, "r"))
+			{
+				int num = pdf_rtoi(pagelabel_after_prefix);
+				if (num == 0)
+					continue;
+				if (tlabel->value > num)
+					break;
+				label = tlabel;
+				labelnum = num;
+			}
+		}
+		if (label == 0) return labelnum;
+		if (label->value == 0) --labelnum;
+		return label->pagenum + (labelnum - label->value) + 1;
+	}
+
+	return 0;
+}
+
 /*
 	Initializers for the fz_document interface.
 
@@ -2339,6 +2655,8 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	doc->super.count_pages = (fz_document_count_pages_fn *)pdf_count_pages;
 	doc->super.load_page = (fz_document_load_page_fn *)pdf_load_page;
 	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn *)pdf_lookup_metadata;
+	doc->super.lookup_page_label = (fz_document_lookup_page_label_fn *)pdf_lookup_page_label;
+	doc->super.reverse_lookup_page_label = (fz_document_reverse_lookup_page_label_fn *)pdf_reverse_lookup_page_label;
 	doc->update_appearance = pdf_update_appearance;
 
 	pdf_lexbuf_init(ctx, &doc->lexbuf.base, PDF_LEXBUF_LARGE);

@@ -2880,3 +2880,28 @@ JNI_FN(MuPDFCore_getSepInternal)(JNIEnv *env, jobject thiz, int page, int sep)
 
 	return (*env)->NewObject(env, sepClass, ctor, jname, bgra, cmyk);
 }
+
+JNIEXPORT jstring JNICALL
+JNI_FN(MuPDFCore_getPageLabelInternal)(JNIEnv *env, jobject thiz, int page)
+{
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+	int i;
+
+	for (i = 0; i < NUM_CACHE; i++)
+	{
+		if (glo->pages[i].page != NULL && glo->pages[i].number == page)
+		  break;
+	}
+	char* label;
+	if (i == NUM_CACHE)
+		label = fz_lookup_page_label(ctx, glo->doc, page);
+	else
+		label = fz_page_label(ctx, glo->pages[i].page);
+
+	if(label == NULL) return (*env)->NewStringUTF(env, "");
+	jstring jstr_label = (*env)->NewStringUTF(env, label);
+	if (i == NUM_CACHE)
+		fz_free(ctx, label);
+	return jstr_label;
+}
