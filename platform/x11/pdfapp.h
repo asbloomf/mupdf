@@ -82,6 +82,7 @@ struct pdfapp_s
 
 	/* current page params */
 	int pageno;
+	char *page_label;
 	fz_page *page;
 	fz_rect page_bbox;
 	fz_display_list *page_list;

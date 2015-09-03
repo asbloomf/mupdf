@@ -892,13 +892,22 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 
 	if (drawpage)
 	{
-		char buf2[64];
+		char *buf2;
 		int len;
-
-		sprintf(buf2, " - %d/%d (%d dpi)",
-				app->pageno, app->pagecount, app->resolution);
+		
+		if (app->doc->page_label && app->doc->page_label(app->page))
+		{
+			buf2 = fz_malloc(app->ctx, strlen(app->doc->page_label(app->page)) + 64);
+			sprintf(buf2, " - %s (%d/%d, %d dpi)", app->doc->page_label(app->page), app->pageno, app->pagecount, app->resolution);
+		}
+		else
+		{
+			buf2 = fz_malloc(app->ctx, 64);
+			sprintf(buf2, " - %d/%d (%d dpi)", app->pageno, app->pagecount, app->resolution);
+		}
+			
 		len = MAX_TITLE-strlen(buf2);
-		if ((int)strlen(app->doctitle) > len)
+		if ((int)strlen(app->doctitle) + strlen(buf2) > len)
 		{
 			snprintf(buf, len-3, "%s", app->doctitle);
 			strcat(buf, "...");
@@ -906,6 +915,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		}
 		else
 			sprintf(buf, "%s%s", app->doctitle, buf2);
+		fz_free(app->ctx, buf2);
 		wintitle(app, buf);
 
 		pdfapp_viewctm(&ctm, app);
