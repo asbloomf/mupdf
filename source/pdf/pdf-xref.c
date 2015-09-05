@@ -2369,7 +2369,7 @@ pdf_page_presentation(fz_context *ctx, pdf_page *page, float *duration)
 }
 
 char *
-pdf_page_label(pdf_page *page)
+pdf_page_label(fz_context *ctx, pdf_page *page)
 {
 	return page->label;
 }
@@ -2400,7 +2400,6 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn *)pdf_lookup_metadata;
 	doc->super.write = (fz_document_write_fn *)pdf_write_document;
 	doc->update_appearance = pdf_update_appearance;
-	doc->super.page_label = (fz_document_page_label_fn *)pdf_page_label;
 
 	pdf_lexbuf_init(ctx, &doc->lexbuf.base, PDF_LEXBUF_LARGE);
 	doc->file = fz_keep_stream(ctx, file);

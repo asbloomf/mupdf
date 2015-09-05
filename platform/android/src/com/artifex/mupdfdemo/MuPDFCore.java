@@ -94,6 +94,7 @@ public class MuPDFCore
 	private native int getNumSepsOnPageInternal(int page);
 	private native int controlSepOnPageInternal(int page, int sep, boolean disable);
 	private native Separation getSepInternal(int page, int sep);
+	private native String getPageLabelInternal(int page);
 
 	public native boolean javascriptSupported();
 
@@ -396,5 +397,8 @@ public class MuPDFCore
 
 	public synchronized Separation getSep(int page, int sep) {
 		return getSepInternal(page, sep);
+	}
+	public synchronized String getPageLabel(int page) {
+		return getPageLabelInternal(page);
 	}
 }
