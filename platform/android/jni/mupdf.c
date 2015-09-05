@@ -2882,9 +2882,12 @@ JNI_FN(MuPDFCore_getPageLabelInternal)(JNIEnv *env, jobject thiz, int page)
 		if (glo->pages[i].page != NULL && glo->pages[i].number == page)
 		  break;
 	}
+	char* label;
 	if (i == NUM_CACHE)
-		return (*env)->NewStringUTF(env, "");
+		label = pdf_lookup_page_label(ctx, glo->doc, page);
+	else
+		label = fz_page_label(ctx, glo->pages[i].page);
 
-	char* label = fz_page_label(ctx, glo->pages[i].page);
+	if(label == NULL) return (*env)->NewStringUTF(env, "");
 	return (*env)->NewStringUTF(env, label);
 }

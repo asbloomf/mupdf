@@ -233,6 +233,13 @@ format_roman_numeral(int number, char* out_ptr) {
 	}
 }
 
+static inline int pdf_tolower(int c)
+{
+	if (c >= 'A' && c <= 'Z')
+		return c + 32;
+	return c;
+}
+
 const char *
 pdf_lookup_page_label(fz_context *ctx, pdf_document *doc, int pagenum)
 {
@@ -267,7 +274,7 @@ pdf_lookup_page_label(fz_context *ctx, pdf_document *doc, int pagenum)
 				int i = 0;
 				for (; roman[i]; ++i)
 				{
-					roman[i] = tolower(roman[i]);
+					roman[i] = pdf_tolower(roman[i]);
 				}
 			}
 		}
