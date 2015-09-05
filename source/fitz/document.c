@@ -436,3 +436,12 @@ const char *fz_get_separation_on_page(fz_context *ctx, fz_page *page, int sep, u
 
 	return page->get_separation(ctx, page, sep, rgba, cmyk);
 }
+
+char *fz_page_label(fz_context *ctx, fz_document *doc, fz_page *page)
+{
+	if (ctx == NULL || page == NULL) {
+		return NULL;
+	}
+
+	return doc->page_label(ctx, doc, page);
+}
