@@ -452,9 +452,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			protected void onMoveToChild(int i) {
 				if (core == null)
 					return;
-
-				mPageNumberView.setText(String.format("%d / %d", i + 1,
-						core.countPages()));
+				updatePageNumView(i);
 				mPageSlider.setMax((core.countPages() - 1) * mPageSliderRes);
 				mPageSlider.setProgress(i * mPageSliderRes);
 				super.onMoveToChild(i);
@@ -897,7 +895,12 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	private void updatePageNumView(int index) {
 		if (core == null)
 			return;
-		mPageNumberView.setText(String.format("%d / %d", index + 1, core.countPages()));
+		String pageLabel = core.getPageLabel(index);
+		if(!pageLabel.isEmpty()) {
+			mPageNumberView.setText(String.format("%s (%d / %d)", pageLabel, index + 1, core.countPages()));
+		} else {
+			mPageNumberView.setText(String.format("%d / %d", index + 1, core.countPages()));
+		}
 	}
 
 	private void printDoc() {
