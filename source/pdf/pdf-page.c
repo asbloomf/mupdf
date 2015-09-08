@@ -288,8 +288,8 @@ pdf_lookup_page_label(fz_context *ctx, pdf_document *doc, int pagenum)
 		}
 		else
 		{
-			page_label = fz_malloc(ctx, 32);
-			page_label[0] = 0;
+			page_label = fz_malloc(ctx, strlen(label->prefix) + 1);
+			strcpy(page_label, label->prefix);
 		}
 		return page_label;
 	}
