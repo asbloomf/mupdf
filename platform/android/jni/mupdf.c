@@ -2889,5 +2889,8 @@ JNI_FN(MuPDFCore_getPageLabelInternal)(JNIEnv *env, jobject thiz, int page)
 		label = fz_page_label(ctx, glo->pages[i].page);
 
 	if(label == NULL) return (*env)->NewStringUTF(env, "");
-	return (*env)->NewStringUTF(env, label);
+	jstring jstr_label = (*env)->NewStringUTF(env, label);
+	if (i == NUM_CACHE)
+		fz_free(ctx, label);
+	return jstr_label;
 }
