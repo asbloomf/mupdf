@@ -2884,7 +2884,7 @@ JNI_FN(MuPDFCore_getPageLabelInternal)(JNIEnv *env, jobject thiz, int page)
 	}
 	char* label;
 	if (i == NUM_CACHE)
-		label = pdf_lookup_page_label(ctx, glo->doc, page);
+		label = fz_lookup_page_label(ctx, glo->doc, page);
 	else
 		label = fz_page_label(ctx, glo->pages[i].page);
 

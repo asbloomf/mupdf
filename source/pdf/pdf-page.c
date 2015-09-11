@@ -200,104 +200,6 @@ pdf_lookup_page_number(fz_context *ctx, pdf_document *doc, pdf_obj *node)
 	return total;
 }
 
-void
-format_roman_numeral(int number, char* out_ptr) {
-	if (number < 1)
-		return;
-	static struct {
-		int value;
-		const char *numeral;
-	} romandata[] = {
-		{ 1000, "M" },{ 900, "CM" },{ 500, "D" },{ 400, "CD" },
-		{ 100, "C" },{ 90, "XC" },{ 50, "L" },{ 40, "XL" },
-		{ 10, "X" },{ 9, "IX" },{ 5, "V" },{ 4, "IV" },{ 1, "I" }
-	};
-
-	size_t len = 0;
-	int num = number, i = 0;
-	for (; num > 0; i++) {
-		for (; num >= romandata[i].value; num -= romandata[i].value) {
-			len += romandata[i].numeral[1] ? 2 : 1;
-		}
-	}
-	assert(len > 0);
-
-	char *c = out_ptr;
-	num = number; i = 0;
-	for (; num > 0; i++) {
-		for (; num >= romandata[i].value; num -= romandata[i].value) {
-			int size = strlen(romandata[i].numeral);
-			strncpy(c, romandata[i].numeral, size + 1);
-			c += size;
-		}
-	}
-}
-
-static inline int pdf_tolower(int c)
-{
-	if (c >= 'A' && c <= 'Z')
-		return c + 32;
-	return c;
-}
-
-const char *
-pdf_lookup_page_label(fz_context *ctx, pdf_document *doc, int pagenum)
-{
-	int i, num;
-	char *page_label;
-	
-	if (doc->label_items.count > 0)
-	{
-		for (i = 0; i < doc->label_items.count; i++)
-		{
-			if (doc->label_items.items[i]->pagenum > pagenum)
-			{
-				break;
-			}
-		}
-		pdf_label_item *label = doc->label_items.items[--i];
-		num = label->pagenum == 0 ? pagenum + 1 : fz_max(label->value, 1) + (pagenum - label->pagenum);
-		
-		if (!strcmp(label->style, "D")) // D is regular numerals
-		{
-			page_label = fz_malloc(ctx, strlen(label->prefix) + 32);
-			sprintf(page_label, "%s%d", label->prefix, num);
-		}
-		else if (!strcmp(label->style, "R") || !strcmp(label->style, "r")) // R is upper case roman, r is lower case
-		{
-			page_label = fz_malloc(ctx, strlen(label->prefix) + 32);
-			strcpy(page_label, label->prefix);
-			char* roman = page_label + strlen(page_label);
-			format_roman_numeral(num, roman);
-			if (label->style[0] == 'r')
-			{
-				int i = 0;
-				for (; roman[i]; ++i)
-				{
-					roman[i] = pdf_tolower(roman[i]);
-				}
-			}
-		}
-		else if (!strcmp(label->style, "A")) // A..Z, AA..ZZ, AAA..ZZZ, ...
-		{
-			page_label = fz_malloc(ctx, strlen(label->prefix) + (num / 26) + 2);
-			strcpy(page_label, label->prefix);
-			char* alpha = page_label + strlen(page_label);
-			memset(alpha, 'A' + (num - 1) % 26, ((num - 1) / 26) + 1);
-			alpha[((num - 1) / 26) + 1] = 0;
-		}
-		else
-		{
-			page_label = fz_malloc(ctx, strlen(label->prefix) + 1);
-			strcpy(page_label, label->prefix);
-		}
-		return page_label;
-	}
-
-	return 0;
-}
-
-
 static pdf_obj *
 pdf_lookup_inherited_page_item(fz_context *ctx, pdf_document *doc, pdf_obj *node, pdf_obj *key)
 {
@@ -688,7 +590,7 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	{
 		if (doc->label_items.count > 0)
 		{
-			page->label = pdf_lookup_page_label(ctx, doc, number);
+			page->label = fz_lookup_page_label(ctx, (fz_document *)doc, number);
 		}
 	}
 	fz_catch(ctx)

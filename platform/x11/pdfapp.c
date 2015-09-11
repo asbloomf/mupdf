@@ -895,7 +895,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		char *buf2;
 		int len;
 		
-		if (app->page->page_label && app->page->page_label(app->ctx, app->page))
+		if (fz_page_label(app->ctx, app->page))
 		{
 			buf2 = fz_malloc(app->ctx, strlen(app->page->page_label(app->ctx, app->page)) + 64);
 			sprintf(buf2, " - %s (%d/%d, %d dpi)", app->page->page_label(app->ctx, app->page), app->pageno, app->pagecount, app->resolution);
