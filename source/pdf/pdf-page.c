@@ -705,7 +705,7 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	{
 		if (doc->label_items.count > 0)
 		{
-			page->label = pdf_lookup_page_label(ctx, doc, number);
+			page->label = fz_lookup_page_label(ctx, (fz_document *)doc, number);
 		}
 	}
 	fz_catch(ctx)
