@@ -439,9 +439,20 @@ const char *fz_get_separation_on_page(fz_context *ctx, fz_page *page, int sep, u
 
 char *fz_page_label(fz_context *ctx, fz_page *page)
 {
-	if (ctx == NULL || page == NULL) {
+	if (ctx == NULL || page == NULL || page->page_label == NULL)
+	{
 		return NULL;
 	}
 
 	return page->page_label(ctx, page);
+}
+
+char *fz_lookup_page_label(fz_context *ctx, fz_document *doc, int pagenum)
+{
+	if (ctx == NULL || doc == NULL || doc->lookup_page_label == NULL)
+	{
+		return NULL;
+	}
+
+	return doc->lookup_page_label(ctx, doc, pagenum);
 }
