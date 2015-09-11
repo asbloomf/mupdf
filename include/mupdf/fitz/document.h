@@ -56,6 +56,7 @@ typedef int (fz_page_count_separations_fn)(fz_context *ctx, fz_page *page);
 typedef const char *(fz_page_get_separation_fn)(fz_context *ctx, fz_page *page, int separation, uint32_t *rgb, uint32_t *cmyk);
 
 typedef char *(fz_page_label_fn)(fz_context *ctx, fz_page *page);
+typedef char *(fz_document_lookup_page_label_fn)(fz_context *ctx, fz_document *doc, int pagenum);
 
 struct fz_page_s
 {
@@ -88,6 +89,7 @@ struct fz_document_s
 	fz_document_load_page_fn *load_page;
 	fz_document_lookup_metadata_fn *lookup_metadata;
 	fz_document_write_fn *write;
+	fz_document_lookup_page_label_fn *lookup_page_label;
 	int did_layout;
 };
 
@@ -385,6 +387,8 @@ void fz_control_separation_on_page(fz_context *ctx, fz_page *page, int sep, int 
 const char *fz_get_separation_on_page(fz_context *ctx, fz_page *page, int sep, uint32_t *rgba, uint32_t *cmyk);
 
 char *fz_page_label(fz_context *ctx, fz_page *page);
+
+char *fz_lookup_page_label(fz_context *ctx, fz_document *doc, int pagenum);
 
 /*
 	fz_write_gproof_file: Given a currently open document, create a
