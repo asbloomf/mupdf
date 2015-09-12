@@ -2471,6 +2471,137 @@ pdf_lookup_page_label(fz_context *ctx, pdf_document *doc, int pagenum)
 	return 0;
 }
 
+int pdf_atoi_az(char * const s)
+{
+	// this is for strings repeating the same character. A means 1, Z means 26, AA means 26 + 1, ZZ means 26 + 26, AAA means (26 * 2) + 1, ZZZ means (26 * 2) + 26
+	if (s == NULL)
+		return 0;
+	char *ptr = s + 1;
+	char base = (s[0] >= 'a' && s[0] <= 'z') ? 'a' : 'A';
+	int count = 0;
+	while (*ptr == *s) {
+		++ptr;
+		++count;
+	}
+	return 1 + s[0] - base + (count * 26);
+}
+
+int pdf_rtoi(const char *s)
+{
+	// this is to convert roman numerals regardless of case
+	if (s == NULL)
+		return 0;
+	int num = 0;
+	int lastnum = 0;
+	const char *ptr = s;
+	while (*ptr != '\0') {
+		int currentnum = 0;
+		if (*ptr == 'M' || *ptr == 'm')
+			currentnum = 1000;
+		else if (*ptr == 'D' || *ptr == 'd')
+			currentnum = 500;
+		else if (*ptr == 'C' || *ptr == 'c')
+			currentnum = 100;
+		else if (*ptr == 'L' || *ptr == 'l')
+			currentnum = 50;
+		else if (*ptr == 'X' || *ptr == 'x')
+			currentnum = 10;
+		else if (*ptr == 'V' || *ptr == 'v')
+			currentnum = 5;
+		else if (*ptr == 'I' || *ptr == 'i')
+			currentnum = 1;
+		else break;
+
+		if (lastnum > 0 && currentnum > lastnum)
+		{
+			num = num - lastnum + (currentnum - lastnum);
+		}
+		else
+		{
+			num += currentnum;
+		}
+		lastnum = currentnum;
+
+		++ptr;
+	}
+	return num;
+}
+
+int
+pdf_reverse_lookup_page_label(fz_context *ctx, pdf_document *doc, char* pagelabel)
+{
+	// this function is to get the index of the page with labeled pagelabel
+	// so, check that the prefix matches as far as it goes and then if there are any numbers left, figure out if they match
+	int i, idx;
+	char *pagelabel_after_prefix = pagelabel;
+
+	if (doc->label_items.count > 0)
+	{
+		pdf_label_item *label = 0;
+		int labelnum = 0;
+		for (i = 0; i < doc->label_items.count; i++)
+		{
+			// iterate through all the page labels
+			pdf_label_item *tlabel = doc->label_items.items[i];
+			if (labelnum != 0 && (tlabel->pagenum - label->pagenum) >= labelnum)
+				break;
+
+			for (idx = 0; tlabel->prefix[idx] != '\0'; ++idx)
+			{
+				if (tlabel->prefix[idx] != pagelabel[idx])
+					break;
+			}
+			if (tlabel->prefix[idx] != '\0')
+				continue;
+			pagelabel_after_prefix = pagelabel + idx;
+			if (!strcmp(tlabel->style, "D"))
+			{
+				int num = fz_atoi(pagelabel_after_prefix);
+				if (num == 0)
+					continue;
+				/*int len = strlen(pagelabel_after_prefix);
+				char* num_str_buf = fz_malloc(ctx, len + 1);
+				itoa(num, num_str_buf, 10);
+				int len2 = strlen(num_str_buf);
+				fz_free(num_str_buf);
+				if (len2 < len)
+				continue;*/
+				if (tlabel->value > num)
+					break;
+				label = tlabel;
+				labelnum = num;
+				//TODO: we really just need to verify that the next page label is far enough away, that is, more than num pages...
+			}
+			else if (!strcmp(tlabel->style, "A") || !strcmp(tlabel->style, "a"))
+			{
+				// make sure the first letter is the correct case
+				if (pagelabel_after_prefix[0] < tlabel->style[0] || pagelabel_after_prefix[0] > (tlabel->style[0] + 25))
+					continue;
+				int num = pdf_atoi_az(pagelabel_after_prefix);
+				if (tlabel->value > num)
+					break;
+				label = tlabel;
+				labelnum = num;
+			}
+			else if (!strcmp(tlabel->style, "R") || !strcmp(tlabel->style, "r"))
+			{
+				int num = pdf_rtoi(pagelabel_after_prefix);
+				if (num == 0)
+					continue;
+				if (tlabel->value > num)
+					break;
+				label = tlabel;
+				labelnum = num;
+			}
+		}
+		if (label == 0) return labelnum;
+		if (label->value == 0) --labelnum;
+		return label->pagenum + (labelnum - label->value) + 1;
+	}
+
+	return 0;
+}
+
 /*
 	Initializers for the fz_document interface.
 
@@ -2497,6 +2628,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn *)pdf_lookup_metadata;
 	doc->super.write = (fz_document_write_fn *)pdf_write_document;
 	doc->super.lookup_page_label = (fz_document_lookup_page_label_fn *)pdf_lookup_page_label;
+	doc->super.reverse_lookup_page_label = (fz_document_reverse_lookup_page_label_fn *)pdf_reverse_lookup_page_label;
 	doc->update_appearance = pdf_update_appearance;
 
 	pdf_lexbuf_init(ctx, &doc->lexbuf.base, PDF_LEXBUF_LARGE);
