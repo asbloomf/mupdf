@@ -456,3 +456,13 @@ char *fz_lookup_page_label(fz_context *ctx, fz_document *doc, int pagenum)
 
 	return doc->lookup_page_label(ctx, doc, pagenum);
 }
+
+int fz_reverse_lookup_page_label(fz_context *ctx, fz_document *doc, char* pagelabel)
+{
+	if (ctx == NULL || doc == NULL || doc->reverse_lookup_page_label == NULL)
+	{
+		return 0;
+	}
+
+	return doc->reverse_lookup_page_label(ctx, doc, pagelabel);
+}
