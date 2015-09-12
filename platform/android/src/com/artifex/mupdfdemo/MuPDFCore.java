@@ -391,7 +391,7 @@ public class MuPDFCore
 	public synchronized Separation getSep(int page, int sep) {
 		return getSepInternal(page, sep);
 	}
-	public synchronized String getPageLabel(int page) {
+	public String getPageLabel(int page) {
 		return getPageLabelInternal(page);
 	}
 }
