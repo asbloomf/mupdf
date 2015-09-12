@@ -51,6 +51,7 @@ typedef const char *(fz_page_get_separation_fn)(fz_context *ctx, fz_page *page, 
 
 typedef char *(fz_page_label_fn)(fz_context *ctx, fz_page *page);
 typedef char *(fz_document_lookup_page_label_fn)(fz_context *ctx, fz_document *doc, int pagenum);
+typedef int (fz_document_reverse_lookup_page_label_fn)(fz_context *ctx, fz_document *doc, char* pagelabel);
 
 typedef void (fz_annot_drop_imp_fn)(fz_context *ctx, fz_annot *annot);
 typedef fz_annot *(fz_annot_next_fn)(fz_context *ctx, fz_annot *annot);
@@ -96,6 +97,7 @@ struct fz_document_s
 	fz_document_lookup_metadata_fn *lookup_metadata;
 	fz_document_write_fn *write;
 	fz_document_lookup_page_label_fn *lookup_page_label;
+	fz_document_reverse_lookup_page_label_fn *reverse_lookup_page_label;
 	int did_layout;
 };
 
