@@ -1397,30 +1397,56 @@ pdf_read_page_labels(fz_context *ctx, pdf_document *doc)
 	
 	if (pdf_is_dict(ctx, labels))
 	{
-		pdf_obj *nums = pdf_dict_gets(ctx, labels, "Nums");
-
-		if (pdf_is_array(ctx, nums))
+		pdf_obj *kids = pdf_dict_gets(ctx, labels, "Kids");
+		int kidslen = 0, kidsidx = 0;
+		int len = 0;
+		if (pdf_is_array(ctx, kids))
 		{
-			int len = pdf_array_len(ctx, nums);
-
+			//indirect references
+			kidslen = pdf_array_len(ctx, kids);
+			i = 0;
+			do {
+				pdf_obj *nums = pdf_dict_gets(ctx, pdf_array_get(ctx, kids, i), "Nums");
+				if (pdf_is_array(ctx, nums))
+				{
+					len += pdf_array_len(ctx, nums);
+				}
+			} while (++i < kidslen);
 			doc->label_items.count = (len + 1) / 2;
 			doc->label_items.items = fz_malloc_array(ctx, (len + 1) / 2, sizeof(pdf_label_item*));
+		}
+		j = 0;
+		do {
+			labels = pdf_array_get(ctx, kids, kidsidx);
+			pdf_obj *nums = pdf_dict_gets(ctx, labels, "Nums");
 
-			for (i = 0, j = 0; i + 1 < len; i += 2, j++)
+			if (pdf_is_array(ctx, nums))
 			{
-				pdf_obj *key = pdf_array_get(ctx, nums, i);
-				pdf_obj *val = pdf_array_get(ctx, nums, i + 1);
+				int locallen = pdf_array_len(ctx, nums);
 
-				if (pdf_is_dict(ctx, val))
+				if (len == 0) // len will already be set if it was indirect references
 				{
-					doc->label_items.items[j] = fz_malloc(ctx, sizeof(pdf_label_item));
-					doc->label_items.items[j]->pagenum = pdf_to_int(ctx, key);
-					doc->label_items.items[j]->style = pdf_to_name(ctx, pdf_dict_gets(ctx, val, "S"));
-					doc->label_items.items[j]->prefix = pdf_to_str_buf(ctx, pdf_dict_gets(ctx, val, "P"));
-					doc->label_items.items[j]->value = pdf_to_int(ctx, pdf_dict_gets(ctx, val, "St"));
+					len = locallen;
+					doc->label_items.count = (len + 1) / 2;
+					doc->label_items.items = fz_malloc_array(ctx, (len + 1) / 2, sizeof(pdf_label_item*));
+				}
+
+				for (i = 0; i + 1 < locallen; i += 2, j++)
+				{
+					pdf_obj *key = pdf_array_get(ctx, nums, i);
+					pdf_obj *val = pdf_array_get(ctx, nums, i + 1);
+
+					if (pdf_is_dict(ctx, val))
+					{
+						doc->label_items.items[j] = fz_malloc(ctx, sizeof(pdf_label_item));
+						doc->label_items.items[j]->pagenum = pdf_to_int(ctx, key);
+						doc->label_items.items[j]->style = pdf_to_name(ctx, pdf_dict_gets(ctx, val, "S"));
+						doc->label_items.items[j]->prefix = pdf_to_str_buf(ctx, pdf_dict_gets(ctx, val, "P"));
+						doc->label_items.items[j]->value = pdf_to_int(ctx, pdf_dict_gets(ctx, val, "St"));
+					}
 				}
 			}
-		}
+		} while (++kidsidx < kidslen);
 	}
 }
 
