@@ -1448,7 +1448,7 @@ pdf_read_page_labels(fz_context *ctx, pdf_document *doc)
 		}
 		j = 0;
 		do {
-			labels = pdf_array_get(ctx, kids, kidsidx);
+			if(kids != NULL) labels = pdf_array_get(ctx, kids, kidsidx);
 			pdf_obj *nums = pdf_dict_gets(ctx, labels, "Nums");
 
 			if (pdf_is_array(ctx, nums))
