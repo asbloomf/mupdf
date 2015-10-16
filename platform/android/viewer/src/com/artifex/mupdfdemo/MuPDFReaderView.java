@@ -65,6 +65,14 @@ public class MuPDFReaderView extends ReaderView {
 	}
 
 	public boolean onSingleTapUp(MotionEvent e) {
+		return super.onSingleTapUp(e);
+	}
+
+	public boolean onDoubleTap(MotionEvent e) {
+		return super.onDoubleTap(e);
+	}
+
+	public boolean onSingleTapConfirmed(MotionEvent e) {
 		LinkInfo link = null;
 
 		if (mMode == Mode.Viewing && !tapDisabled) {
@@ -94,19 +102,19 @@ public class MuPDFReaderView extends ReaderView {
 						}
 					});
 				} else if (e.getX() < tapPageMargin) {
-					super.smartMoveBackwards();
+					super.smartMoveBackwards(false);
 				} else if (e.getX() > super.getWidth() - tapPageMargin) {
-					super.smartMoveForwards();
+					super.smartMoveForwards(false);
 				} else if (e.getY() < tapPageMargin) {
-					super.smartMoveBackwards();
+					super.smartMoveBackwards(true);
 				} else if (e.getY() > super.getHeight() - tapPageMargin) {
-					super.smartMoveForwards();
+					super.smartMoveForwards(true);
 				} else {
 					onTapMainDocArea();
 				}
 			}
 		}
-		return super.onSingleTapUp(e);
+		return super.onSingleTapConfirmed(e);
 	}
 
 	@Override
