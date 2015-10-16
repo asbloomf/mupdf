@@ -12,13 +12,14 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.view.animation.ScaleAnimation;
 import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.Scroller;
 
 public class ReaderView
 		extends AdapterView<Adapter>
-		implements GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener, Runnable {
+		implements GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener, ScaleGestureDetector.OnScaleGestureListener, Runnable {
 	private static final int  MOVING_DIAGONALLY = 0;
 	private static final int  MOVING_LEFT       = 1;
 	private static final int  MOVING_RIGHT      = 2;
@@ -54,7 +55,7 @@ public class ReaderView
 				  mGestureDetector;
 	private final ScaleGestureDetector
 				  mScaleGestureDetector;
-	private final Scroller    mScroller;
+	private final Scroller mScroller;
 	private final Stepper     mStepper;
 	private int               mScrollerLastX;
 	private int               mScrollerLastY;
@@ -153,7 +154,7 @@ public class ReaderView
 		return advance;
 	}
 
-	public void smartMoveForwards() {
+	public void smartMoveForwards(boolean isVertical) {
 		View v = mChildViews.get(mCurrent);
 		if (v == null)
 			return;
@@ -177,56 +178,112 @@ public class ReaderView
 		int remainingY = mScroller.getFinalY() - mScroller.getCurrY();
 		// right/bottom is in terms of pixels within the scaled document; e.g. 1000
 		int top = -(v.getTop()  + mYScroll + remainingY);
-		int right  = screenWidth -(v.getLeft() + mXScroll + remainingX);
+		int left = -(v.getLeft() + mXScroll + remainingX);
+		int right  = screenWidth +left;
 		int bottom = screenHeight+top;
 		// docWidth/Height are the width/height of the scaled document e.g. 2000x3000
 		int docWidth  = v.getMeasuredWidth();
 		int docHeight = v.getMeasuredHeight();
 
 		int xOffset, yOffset;
-		if (bottom >= docHeight) {
-			// We are flush with the bottom. Advance to next column.
-			if (right + screenWidth > docWidth) {
-				// No room for another column - go to next page
-				View nv = mChildViews.get(mCurrent+1);
-				if (nv == null) // No page to advance to
-					return;
-				int nextTop  = -(nv.getTop() + mYScroll + remainingY);
-				int nextLeft = -(nv.getLeft() + mXScroll + remainingX);
-				int nextDocWidth = nv.getMeasuredWidth();
-				int nextDocHeight = nv.getMeasuredHeight();
+		if(isVertical) {
+			if (bottom >= docHeight) {
+				// We are flush with the bottom. Advance to next column.
+				if (right + (screenWidth/2) > docWidth) {
+					// No room for another column - go to next page
+					View nv = mChildViews.get(mCurrent + 1);
+					if (nv == null) // No page to advance to
+						return;
+					int nextTop = -(nv.getTop() + mYScroll + remainingY);
+					int nextLeft = -(nv.getLeft() + mXScroll + remainingX);
+					int nextDocWidth = nv.getMeasuredWidth();
+					int nextDocHeight = nv.getMeasuredHeight();
 
-				// Allow for the next page maybe being shorter than the screen is high
-				yOffset = (nextDocHeight < screenHeight ? ((nextDocHeight - screenHeight)>>1) : 0);
+					// Allow for the next page maybe being shorter than the screen is high
+					yOffset = (nextDocHeight < screenHeight ? ((nextDocHeight - screenHeight) >> 1) : 0);
 
-				if (nextDocWidth < screenWidth) {
-					// Next page is too narrow to fill the screen. Scroll to the top, centred.
-					xOffset = (nextDocWidth - screenWidth)>>1;
+					if (nextDocWidth < screenWidth) {
+						// Next page is too narrow to fill the screen. Scroll to the top, centred.
+						xOffset = (nextDocWidth - screenWidth) >> 1;
+					} else {
+						// Reset X back to the left hand column
+						xOffset = right % screenWidth;
+						if(xOffset > screenWidth/2)
+								xOffset = 0;
+						// Adjust in case the previous page is less wide
+						if (xOffset + screenWidth > nextDocWidth)
+							xOffset = nextDocWidth - screenWidth;
+					}
+					xOffset -= nextLeft;
+					yOffset -= nextTop;
 				} else {
-					// Reset X back to the left hand column
-					xOffset = right % screenWidth;
-					// Adjust in case the previous page is less wide
-					if (xOffset + screenWidth > nextDocWidth)
-						xOffset = nextDocWidth - screenWidth;
+					// Move to top of next column
+					xOffset = screenWidth;
+					if(right + xOffset > docWidth)
+							xOffset = docWidth - right;
+					yOffset = screenHeight - bottom;
 				}
-				xOffset -= nextLeft;
-				yOffset -= nextTop;
 			} else {
-				// Move to top of next column
-				xOffset = screenWidth;
-				yOffset = screenHeight - bottom;
+				// Advance by 90% of the screen height downwards (in case lines are partially cut off)
+				xOffset = 0;
+				yOffset = smartAdvanceAmount(screenHeight, docHeight - bottom);
 			}
 		} else {
-			// Advance by 90% of the screen height downwards (in case lines are partially cut off)
-			xOffset = 0;
-			yOffset = smartAdvanceAmount(screenHeight, docHeight - bottom);
+			// we want to go horizontal first, then down like a z
+			if (right >= docWidth) {
+				// We are flush with the right. Advance to next row.
+				if (bottom + screenHeight > docHeight) {
+					if(bottom < docHeight) {
+						// No room for another full row - go to the very bottom
+						xOffset = -left;
+						yOffset = docHeight - bottom;
+					} else {
+						// go to next page
+						View nv = mChildViews.get(mCurrent + 1);
+						if (nv == null) // No page to advance to
+							return;
+						int nextTop = -(nv.getTop() + mYScroll + remainingY);
+						int nextLeft = -(nv.getLeft() + mXScroll + remainingX);
+						int nextDocWidth = nv.getMeasuredWidth();
+						int nextDocHeight = nv.getMeasuredHeight();
+
+						// Allow for the next page maybe being shorter than the screen is high
+						yOffset = (nextDocHeight < screenHeight ? ((nextDocHeight - screenHeight) >> 1) : 0);
+
+						if (nextDocWidth < screenWidth) {
+							// Next page is too narrow to fill the screen. Scroll to the top, centred.
+							xOffset = (nextDocWidth - screenWidth) >> 1;
+						} else {
+							xOffset = 0;
+							// Reset X back to the left hand column
+							/*xOffset = right % screenWidth;
+							// Adjust in case the previous page is less wide
+							if (xOffset + screenWidth > nextDocWidth)
+								xOffset = nextDocWidth - screenWidth;
+								*/
+						}
+						xOffset -= nextLeft;
+						yOffset -= nextTop;
+					}
+				} else {
+					// Move to left of next row
+					xOffset = -left;
+					yOffset = screenHeight;
+				}
+			} else {
+				// Advance by up to 100% of the screen width rightwards
+				xOffset = screenWidth;
+				if(right + screenWidth > docWidth)
+					xOffset += docWidth - (right + screenWidth);
+				yOffset = 0;
+			}
 		}
 		mScrollerLastX = mScrollerLastY = 0;
 		mScroller.startScroll(0, 0, remainingX - xOffset, remainingY - yOffset, 400);
 		mStepper.prod();
 	}
 
-	public void smartMoveBackwards() {
+	public void smartMoveBackwards(boolean isVertical) {
 		View v = mChildViews.get(mCurrent);
 		if (v == null)
 			return;
@@ -251,47 +308,104 @@ public class ReaderView
 		// left/top is in terms of pixels within the scaled document; e.g. 1000
 		int left  = -(v.getLeft() + mXScroll + remainingX);
 		int top   = -(v.getTop()  + mYScroll + remainingY);
+		int right  = screenWidth +left;
 		// docWidth/Height are the width/height of the scaled document e.g. 2000x3000
+		int docWidth  = v.getMeasuredWidth();
 		int docHeight = v.getMeasuredHeight();
 
 		int xOffset, yOffset;
-		if (top <= 0) {
-			// We are flush with the top. Step back to previous column.
-			if (left < screenWidth) {
+		if(isVertical) {
+			if (top <= 0) {
+				// We are flush with the top. Step back to previous column.
+				if (left < screenWidth/2) {
 				/* No room for previous column - go to previous page */
-				View pv = mChildViews.get(mCurrent-1);
-				if (pv == null) /* No page to advance to */
-					return;
-				int prevDocWidth = pv.getMeasuredWidth();
-				int prevDocHeight = pv.getMeasuredHeight();
+					View pv = mChildViews.get(mCurrent - 1);
+					if (pv == null) /* No page to advance to */
+						return;
+					int prevDocWidth = pv.getMeasuredWidth();
+					int prevDocHeight = pv.getMeasuredHeight();
 
-				// Allow for the next page maybe being shorter than the screen is high
-				yOffset = (prevDocHeight < screenHeight ? ((prevDocHeight - screenHeight)>>1) : 0);
+					// Allow for the next page maybe being shorter than the screen is high
+					yOffset = (prevDocHeight < screenHeight ? ((prevDocHeight - screenHeight) >> 1) : 0);
 
-				int prevLeft  = -(pv.getLeft() + mXScroll);
-				int prevTop  = -(pv.getTop() + mYScroll);
-				if (prevDocWidth < screenWidth) {
-					// Previous page is too narrow to fill the screen. Scroll to the bottom, centred.
-					xOffset = (prevDocWidth - screenWidth)>>1;
+					int prevLeft = -(pv.getLeft() + mXScroll);
+					int prevTop = -(pv.getTop() + mYScroll);
+					if (prevDocWidth < screenWidth) {
+						// Previous page is too narrow to fill the screen. Scroll to the bottom, centred.
+						xOffset = (prevDocWidth - screenWidth) >> 1;
+					} else {
+						// Reset X back to the right hand column
+						xOffset = (left > 0 ? left % screenWidth : 0);
+						if (xOffset + screenWidth > prevDocWidth)
+							xOffset = prevDocWidth - screenWidth;
+						while (xOffset + screenWidth * 2 < prevDocWidth)
+							xOffset += screenWidth;
+						if(xOffset < prevDocWidth - (3*screenWidth/2))
+								xOffset = prevDocWidth - screenWidth;
+					}
+					xOffset -= prevLeft;
+					yOffset -= prevTop - prevDocHeight + screenHeight;
 				} else {
-					// Reset X back to the right hand column
-					xOffset = (left > 0 ? left % screenWidth : 0);
-					if (xOffset + screenWidth > prevDocWidth)
-						xOffset = prevDocWidth - screenWidth;
-					while (xOffset + screenWidth*2 < prevDocWidth)
-						xOffset += screenWidth;
+					// Move to bottom of previous column
+					xOffset = -screenWidth;
+					if(left + xOffset < 0)
+							xOffset = -left;
+					yOffset = docHeight - screenHeight + top;
 				}
-				xOffset -= prevLeft;
-				yOffset -= prevTop-prevDocHeight+screenHeight;
 			} else {
-				// Move to bottom of previous column
-				xOffset = -screenWidth;
-				yOffset = docHeight - screenHeight + top;
+				// Retreat by 90% of the screen height downwards (in case lines are partially cut off)
+				xOffset = 0;
+				yOffset = -smartAdvanceAmount(screenHeight, top);
 			}
 		} else {
-			// Retreat by 90% of the screen height downwards (in case lines are partially cut off)
-			xOffset = 0;
-			yOffset = -smartAdvanceAmount(screenHeight, top);
+			// we want to go horizontal first, then back like a z from the bottom
+			if (left <= 0) {
+				// We are flush with the left. Step back to previous row.
+				if (top < screenHeight) {
+					if(top > 0) {
+						// No room for full row - go to the very top
+						xOffset = docWidth-right;
+						yOffset = -top;
+					} else {
+						// go to previous page
+						View pv = mChildViews.get(mCurrent - 1);
+						if (pv == null) // No page to advance to
+							return;
+						int prevDocWidth = pv.getMeasuredWidth();
+						int prevDocHeight = pv.getMeasuredHeight();
+
+						// Allow for the next page maybe being shorter than the screen is high
+						yOffset = (prevDocHeight < screenHeight ? ((prevDocHeight - screenHeight) >> 1) : 0);
+
+						int prevLeft = -(pv.getLeft() + mXScroll);
+						int prevTop = -(pv.getTop() + mYScroll);
+						if (prevDocWidth < screenWidth) {
+							// Previous page is too narrow to fill the screen. Scroll to the bottom, centred.
+							xOffset = (prevDocWidth - screenWidth) >> 1;
+						} else {
+							// Reset X back to the right hand column
+							xOffset = prevDocWidth - screenWidth;
+							/*xOffset = (left > 0 ? left % screenWidth : 0);
+							if (xOffset + screenWidth > prevDocWidth)
+								xOffset = prevDocWidth - screenWidth;
+							while (xOffset + screenWidth * 2 < prevDocWidth)
+								xOffset += screenWidth;*/
+						}
+						xOffset -= prevLeft;
+						yOffset -= prevTop - prevDocHeight + screenHeight;
+					}
+				} else {
+					// Move to right of previous row
+					xOffset = docWidth-right;
+					yOffset = -screenHeight;
+				}
+			} else {
+				// Retreat by up to 100% of the screen width rightwards
+				xOffset = -screenWidth;
+				if(left + xOffset < 0)
+					xOffset = -left;
+				yOffset = 0;
+			}
 		}
 		mScrollerLastX = mScrollerLastY = 0;
 		mScroller.startScroll(0, 0, remainingX - xOffset, remainingY - yOffset, 400);
@@ -350,6 +464,8 @@ public class ReaderView
 			mYScroll += y - mScrollerLastY;
 			mScrollerLastX = x;
 			mScrollerLastY = y;
+			//float scale = mScroller.getCurrScale();
+			//if(scale > 0) mScale = scale;
 			requestLayout();
 			mStepper.prod();
 		}
@@ -461,6 +577,77 @@ public class ReaderView
 	}
 
 	public boolean onSingleTapUp(MotionEvent e) {
+		return false;
+	}
+
+	public boolean onDoubleTap(MotionEvent e) {
+		if(!mReflow) {
+			View v = mChildViews.get(mCurrent);
+			if (v != null) {
+				float scale = (float)getWidth() / v.getMeasuredWidth();
+				float newScale = (mScale > 1)? 1: (scale < 1.5? 2: scale);
+				float factor = newScale/mScale;
+
+				int xScroll, yScroll;
+
+				if(newScale >= 1.5) {
+					//put a 25% margin around it, so that clicking 25% inside the edge is like clicking all the way at the edge
+					float currentFocusX = 2 * e.getX() - getWidth() / 2.f;
+					if (currentFocusX < 0) currentFocusX = 0;
+					else if (currentFocusX > getWidth()) currentFocusX = getWidth();
+					float currentFocusY = 2 * e.getY() - getHeight() / 2.f;
+					if (currentFocusY < 0) currentFocusY = 0;
+					else if (currentFocusY > getHeight())
+						currentFocusY = getHeight();
+					// Work out the focus point relative to the view top left
+					int viewFocusX = (int) currentFocusX - (v.getLeft() + mXScroll);
+					int viewFocusY = (int) currentFocusY - (v.getTop() + mYScroll);
+					// Scroll to maintain the focus point
+					xScroll = mXScroll + viewFocusX - (int)(viewFocusX * factor);
+					yScroll = mYScroll + viewFocusY - (int)(viewFocusY * factor);
+
+					/*if (mLastScaleFocusX>=0)
+						mXScroll+=currentFocusX-mLastScaleFocusX;
+					if (mLastScaleFocusY>=0)
+						mYScroll+=currentFocusY-mLastScaleFocusY;
+
+					mLastScaleFocusX=currentFocusX;
+					mLastScaleFocusY=currentFocusY;*/
+				} else {
+					xScroll = mXScroll;
+					yScroll = mYScroll;
+				}
+				mXScroll = mYScroll = 0;
+				if(v.getWidth()*factor <= getWidth()) {
+					// if the width of the document doesn't cover the whole screen, center it
+					xScroll = -v.getLeft() + (int) ((getWidth() - v.getWidth() * factor) / 2);
+				} else if(v.getWidth() *factor <= getWidth()) {
+					// if the width of the document does cover the whole screen, ensure it doesn't go off the edge
+					if(v.getLeft() + xScroll > 0) xScroll = -v.getLeft();
+					else if(v.getRight() + xScroll < v.getWidth()) xScroll = v.getWidth() - v.getRight();
+				}
+				if(v.getHeight()*factor <= getHeight()) {
+					yScroll = -v.getTop() + (int) ((getHeight() - v.getHeight() * factor) / 2);
+				} else {
+					if(v.getTop() + yScroll > 0) yScroll = -v.getTop();
+					else if(v.getTop() + v.getHeight()*factor + yScroll < getHeight()) yScroll = getHeight() - (int)(v.getTop() + v.getHeight()*factor);
+				}
+				//mScroller.startZoom(0, 0, xScroll, yScroll, mScale, newScale);
+				//mStepper.prod();
+				mXScroll = xScroll;
+				mYScroll = yScroll;
+				mScale = newScale;
+				requestLayout();
+			}
+		}
+		return false;
+	}
+
+	public boolean onDoubleTapEvent(MotionEvent e) {
+		return false;
+	}
+
+	public boolean onSingleTapConfirmed(MotionEvent e) {
 		return false;
 	}
 
