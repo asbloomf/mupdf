@@ -2,14 +2,17 @@
 # a different version, by uncommenting one of the pairs of lines below.
 # Suppose our base version is X:
 
+APP_PLATFORM=android-9
+APP_ABI := all
+
 # Version X: armeabi
 #APP_PLATFORM=android-8
 #APP_ABI := armeabi
 
 # Version X+1: armeabi-v7a (Much faster due to the availability of hardware
 # FP, but cannot be run in the emulator).
-APP_PLATFORM=android-8
-APP_ABI := armeabi-v7a
+#APP_PLATFORM=android-8
+#APP_ABI := armeabi-v7a
 
 # Version X+2: x86 (Requires android-9, so a change needs to be made in
 # AndroidManifest.xml too)
