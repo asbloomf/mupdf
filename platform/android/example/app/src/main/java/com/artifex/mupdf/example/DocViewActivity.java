@@ -1,4 +1,4 @@
-package com.artifex.mupdf.example;
+package com.bloomfield.mupdf.example;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
@@ -8,11 +8,11 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.artifex.mupdf.fitz.ColorSpace;
-import com.artifex.mupdf.fitz.Document;
-import com.artifex.mupdf.fitz.Matrix;
-import com.artifex.mupdf.fitz.Page;
-import com.artifex.mupdf.fitz.Pixmap;
+import com.bloomfield.mupdf.fitz.ColorSpace;
+import com.bloomfield.mupdf.fitz.Document;
+import com.bloomfield.mupdf.fitz.Matrix;
+import com.bloomfield.mupdf.fitz.Page;
+import com.bloomfield.mupdf.fitz.Pixmap;
 
 public class DocViewActivity extends Activity
 {

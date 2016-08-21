@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="scripts">
+      <UniqueIdentifier>{dd8fb841-74bc-4eff-bc83-b2c9602e7753}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generated">
+      <UniqueIdentifier>{32a8f156-25a7-47bf-b447-a2c52323a8af}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\scripts\bin2hex.c">
+      <Filter>scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\scripts\cmapdump.c">
+      <Filter>scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\scripts\cquote.c">
+      <Filter>scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\scripts\fontdump.c">
+      <Filter>scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\scripts\namedump.c">
+      <Filter>scripts</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\resources\pdf\names.txt">
+      <Filter>scripts</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\generated\gen_adobe_ca.h">
+      <Filter>generated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\generated\gen_cmap_cns.h">
+      <Filter>generated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\generated\gen_cmap_gb.h">
+      <Filter>generated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\generated\gen_cmap_japan.h">
+      <Filter>generated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\generated\gen_cmap_korea.h">
+      <Filter>generated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\generated\gen_js_util.h">
+      <Filter>generated</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="generate.bat" />
+  </ItemGroup>
+</Project>

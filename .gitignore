@@ -53,3 +53,11 @@ platform/android/*/local.properties
 platform/android/*/.classpath
 platform/android/*/.project
 platform/android/*/.settings
+*.d
+*.a
+*.exe
+*.obj
+*.sdf
+*.apk
+*.ap_
+platform/android/bin/

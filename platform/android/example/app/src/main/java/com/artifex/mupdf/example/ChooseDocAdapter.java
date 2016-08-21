@@ -1,4 +1,4 @@
-package com.artifex.mupdf.example;
+package com.bloomfield.mupdf.example;
 
 import android.view.LayoutInflater;
 import android.view.View;

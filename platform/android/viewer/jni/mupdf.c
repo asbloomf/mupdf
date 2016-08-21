@@ -15,8 +15,8 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
-#define JNI_FN(A) Java_com_artifex_mupdfdemo_ ## A
-#define PACKAGENAME "com/artifex/mupdfdemo"
+#define JNI_FN(A) Java_com_bloomfield_mupdfdemo_ ## A
+#define PACKAGENAME "com/bloomfield/mupdfdemo"
 
 #define LOG_TAG "libmupdf"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
@@ -1777,7 +1777,7 @@ JNI_FN(MuPDFCore_destroying)(JNIEnv * env, jobject thiz)
 #ifdef NDK_PROFILER
 	// Apparently we should really be writing to whatever path we get
 	// from calling getFilesDir() in the java part, which supposedly
-	// gives /sdcard/data/data/com.artifex.MuPDF/gmon.out, but that's
+	// gives /sdcard/data/data/com.bloomfield.MuPDF/gmon.out, but that's
 	// unfriendly.
 	setenv("CPUPROFILE", "/sdcard/gmon.out", 1);
 	moncleanup();

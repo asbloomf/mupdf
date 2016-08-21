@@ -1,4 +1,4 @@
-package com.artifex.mupdf.example;
+package com.bloomfield.mupdf.example;
 
 public class ChooseDocItem {
 	public enum Type {

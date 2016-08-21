@@ -1,4 +1,4 @@
-package com.artifex.mupdf.example;
+package com.bloomfield.mupdf.example;
 
 import android.app.Activity;
 import android.app.AlertDialog;

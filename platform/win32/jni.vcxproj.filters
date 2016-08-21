@@ -1,0 +1,203 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="java">
+      <UniqueIdentifier>{5a2010af-6ba6-4f85-80cf-46bcd4ca441a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="javaapp">
+      <UniqueIdentifier>{61000e31-71ad-4d2a-bb3d-5b7948e0d33f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\AndroidDrawDevice.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\Annotation.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\AwtDrawDevice.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\CDevice.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\ColorSpace.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\Context.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\Cookie.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\Device.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\DisplayList.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\DisplayListDevice.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\Document.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\Font.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\Image.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\Link.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\Matrix.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\Outline.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\Page.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\Path.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\PathProcessor.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\Point.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\Rect.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\RectI.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\Shade.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\StrokeState.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\Text.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdf\fitz\TryLaterException.java">
+      <Filter>java</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\Annotation.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\ArrayDeque.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\AsyncTask.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\ChoosePDFActivity.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\ChoosePDFAdapter.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\ChoosePDFItem.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\Deque.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\FilePicker.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\LinkInfo.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\LinkInfoExternal.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\LinkInfoInternal.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\LinkInfoRemote.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\LinkInfoVisitor.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\MuPDFActivity.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\MuPDFAlert.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\MuPDFAlertInternal.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\MuPDFCore.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\MuPDFPageAdapter.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\MuPDFPageView.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\MuPDFReaderView.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\MuPDFReflowAdapter.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\MuPDFReflowView.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\MuPDFView.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\OutlineActivity.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\OutlineActivityData.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\OutlineAdapter.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\OutlineItem.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\PageView.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\PrintDialogActivity.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\ReaderView.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\SafeAnimatorInflater.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\SearchTask.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\SearchTaskResult.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\TextChar.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\TextWord.java">
+      <Filter>javaapp</Filter>
+    </None>
+    <None Include="..\android\src\com\artifex\mupdfdemo\WidgetType.java">
+      <Filter>javaapp</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\android\jni\mupdf.c" />
+    <CustomBuild Include="..\android\jni\mupdf_native.c" />
+  </ItemGroup>
+</Project>
