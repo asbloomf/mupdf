@@ -28,10 +28,7 @@ enum Purpose {
 
 public class ChoosePDFActivity extends ListActivity {
 	static public final String PICK_KEY_FILE = "com.artifex.mupdfdemo.PICK_KEY_FILE";
-	static private File  mDirectory;
 	static private Map<String, Integer> mPositions = new HashMap<String, Integer>();
-	private File         mParent;
-	private File []      mDirs;
 	private File []      mFiles;
 	private Handler	     mHandler;
 	private Runnable     mUpdateFiles;
@@ -63,9 +60,6 @@ public class ChoosePDFActivity extends ListActivity {
 			return;
 		}
 
-		if (mDirectory == null)
-			mDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-
 		// Create a list adapter...
 		adapter = new ChoosePDFAdapter(getLayoutInflater());
 		setListAdapter(adapter);
@@ -73,90 +67,97 @@ public class ChoosePDFActivity extends ListActivity {
 		// ...that is updated dynamically when files are scanned
 		mHandler = new Handler();
 		mUpdateFiles = new Runnable() {
-			public void run() {
-				Resources res = getResources();
-				String appName = res.getString(R.string.app_name);
-				String version = res.getString(R.string.version);
-				String title = res.getString(R.string.picker_title_App_Ver_Dir);
-				setTitle(String.format(title, appName, version, mDirectory));
-
-				mParent = mDirectory.getParentFile();
-
-				mDirs = mDirectory.listFiles(new FileFilter() {
+			private void addFolders(File dir) {
+				File[] dirs = dir.listFiles(new FileFilter() {
 
 					public boolean accept(File file) {
 						return file.isDirectory();
 					}
 				});
-				if (mDirs == null)
-					mDirs = new File[0];
+				if (dirs == null)
+					dirs = new File[0];
 
-				mFiles = mDirectory.listFiles(new FileFilter() {
+				Arrays.sort(dirs, new Comparator<File>() {
+					public int compare(File arg0, File arg1) {
+						return arg0.getName().compareToIgnoreCase(arg1.getName());
+					}
+				});
+
+				for (File f : dirs) {
+					addFiles(f);
+					addFolders(f);
+				}
+			}
+			private void addFiles(File dir) {
+				File[] files = dir.listFiles(new FileFilter() {
 
 					public boolean accept(File file) {
 						if (file.isDirectory())
 							return false;
 						String fname = file.getName().toLowerCase();
 						switch (mPurpose) {
-						case PickPDF:
-							if (fname.endsWith(".pdf"))
-								return true;
-							if (fname.endsWith(".xps"))
-								return true;
-							if (fname.endsWith(".cbz"))
-								return true;
-							if (fname.endsWith(".epub"))
-								return true;
-							if (fname.endsWith(".fb2"))
-								return true;
-							if (fname.endsWith(".png"))
-								return true;
-							if (fname.endsWith(".jpe"))
-								return true;
-							if (fname.endsWith(".jpeg"))
-								return true;
-							if (fname.endsWith(".jpg"))
-								return true;
-							if (fname.endsWith(".jfif"))
-								return true;
-							if (fname.endsWith(".jfif-tbnl"))
-								return true;
-							if (fname.endsWith(".tif"))
-								return true;
-							if (fname.endsWith(".tiff"))
-								return true;
-							return false;
-						case PickKeyFile:
-							if (fname.endsWith(".pfx"))
-								return true;
-							return false;
-						default:
-							return false;
+							case PickPDF:
+								if (fname.endsWith(".pdf"))
+									return true;
+								if (fname.endsWith(".xps"))
+									return true;
+								if (fname.endsWith(".cbz"))
+									return true;
+								if (fname.endsWith(".epub"))
+									return true;
+								if (fname.endsWith(".fb2"))
+									return true;
+								if (fname.endsWith(".png"))
+									return true;
+								if (fname.endsWith(".jpe"))
+									return true;
+								if (fname.endsWith(".jpeg"))
+									return true;
+								if (fname.endsWith(".jpg"))
+									return true;
+								if (fname.endsWith(".jfif"))
+									return true;
+								if (fname.endsWith(".jfif-tbnl"))
+									return true;
+								if (fname.endsWith(".tif"))
+									return true;
+								if (fname.endsWith(".tiff"))
+									return true;
+								return false;
+							case PickKeyFile:
+								if (fname.endsWith(".pfx"))
+									return true;
+								return false;
+							default:
+								return false;
 						}
 					}
 				});
-				if (mFiles == null)
-					mFiles = new File[0];
+				if (files == null || files.length == 0)
+					return;
 
-				Arrays.sort(mFiles, new Comparator<File>() {
+				Arrays.sort(files, new Comparator<File>() {
 					public int compare(File arg0, File arg1) {
 						return arg0.getName().compareToIgnoreCase(arg1.getName());
 					}
 				});
 
-				Arrays.sort(mDirs, new Comparator<File>() {
-					public int compare(File arg0, File arg1) {
-						return arg0.getName().compareToIgnoreCase(arg1.getName());
-					}
-				});
+				adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.DIR, dir.getAbsolutePath()));
+				for (File f : files)
+					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.DOC, f.getName()));
+			}
+			public void run() {
+				Resources res = getResources();
+				String appName = res.getString(R.string.app_name);
+				String version = res.getString(R.string.version);
+				String title = res.getString(R.string.picker_title_App_Ver_Dir);
+				setTitle(String.format(title, appName, version, ""));
+
+				File root = new File("/");
+				addFiles(root);
+				addFolders(root);
 
 				adapter.clear();
-				if (mParent != null)
-					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.PARENT, getString(R.string.parent_directory)));
-				for (File f : mDirs)
-					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.DIR, f.getName()));
-				for (File f : mFiles)
-					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.DOC, f.getName()));
 
 				lastPosition();
 			}
@@ -166,7 +167,7 @@ public class ChoosePDFActivity extends ListActivity {
 		mHandler.post(mUpdateFiles);
 
 		// ...and observe the directory and scan files upon changes.
-		FileObserver observer = new FileObserver(mDirectory.getPath(), FileObserver.CREATE | FileObserver.DELETE) {
+		FileObserver observer = new FileObserver("/", FileObserver.CREATE | FileObserver.DELETE) {
 			public void onEvent(int event, String path) {
 				mHandler.post(mUpdateFiles);
 			}
@@ -175,7 +176,7 @@ public class ChoosePDFActivity extends ListActivity {
 	}
 
 	private void lastPosition() {
-		String p = mDirectory.getAbsolutePath();
+		String p = "/";
 		if (mPositions.containsKey(p))
 			getListView().setSelection(mPositions.get(p));
 	}
@@ -184,25 +185,13 @@ public class ChoosePDFActivity extends ListActivity {
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		super.onListItemClick(l, v, position, id);
 
-		mPositions.put(mDirectory.getAbsolutePath(), getListView().getFirstVisiblePosition());
+		mPositions.put("/", getListView().getFirstVisiblePosition());
 
-		if (position < (mParent == null ? 0 : 1)) {
-			mDirectory = mParent;
-			mHandler.post(mUpdateFiles);
-			return;
-		}
+		ChoosePDFItem item = (ChoosePDFItem)adapter.getItem(position);
 
-		position -= (mParent == null ? 0 : 1);
+		if(item.type != ChoosePDFItem.Type.DOC) return;
 
-		if (position < mDirs.length) {
-			mDirectory = mDirs[position];
-			mHandler.post(mUpdateFiles);
-			return;
-		}
-
-		position -= mDirs.length;
-
-		Uri uri = Uri.fromFile(mFiles[position]);
+		Uri uri = Uri.fromFile(new File(item.fullPath));
 		Intent intent = new Intent(this,MuPDFActivity.class);
 		intent.setAction(Intent.ACTION_VIEW);
 		intent.setData(uri);
@@ -222,7 +211,6 @@ public class ChoosePDFActivity extends ListActivity {
 	@Override
 	protected void onPause() {
 		super.onPause();
-		if (mDirectory != null)
-			mPositions.put(mDirectory.getAbsolutePath(), getListView().getFirstVisiblePosition());
+		mPositions.put("/", getListView().getFirstVisiblePosition());
 	}
 }

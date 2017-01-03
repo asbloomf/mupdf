@@ -7,9 +7,11 @@ public class ChoosePDFItem {
 
 	final public Type type;
 	final public String name;
+	final public String fullPath;
 
-	public ChoosePDFItem (Type t, String n) {
+	public ChoosePDFItem (Type t, String n, String path) {
 		type = t;
 		name = n;
+		fullPath = path;
 	}
 }

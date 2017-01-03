@@ -33,7 +33,7 @@ public class ChoosePDFAdapter extends BaseAdapter {
 	}
 
 	public Object getItem(int i) {
-		return null;
+		return mItems.get(i);
 	}
 
 	public long getItemId(int arg0) {
